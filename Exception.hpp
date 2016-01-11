@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2016, 爱wifi（版权声明）
  *
- * @file	CException.h
+ * @file	Exception.h
  * @brief 此文件的简单描述。(必填字段)
  *
  * 此文件的详细功能描述。(可选字段)
@@ -11,15 +11,16 @@
  *
  * 修订说明:初始版本
  */
-#ifndef CEXCEPTION_H_
-#define CEXCEPTION_H_
-#include <stdio.h>
+#ifndef EXCEPTION_H_
+#define EXCEPTION_H_
 #include <sstream>
+using std::string;
+using std::stringstream;
 
 namespace Taiji
 {
 
-enum EEXCECODE
+enum   class Eexcecode:int
 {
 	/*基本异常*/
 	REDIS_ERR = 10, ///redis异常
@@ -34,24 +35,24 @@ enum EEXCECODE
 	INVALID_ARG_ERR = 52, ///参数错误
 	EXCEED_MAX_ERR = 53, ///超过最大值
 	OVERFLOW_ERR = 54, ///数值溢出
-	Out_Of_Range_ERR = 55, ///各种数据结构的访问越界异常
+	OUT_Of_RANGE_ERR = 55, ///各种数据结构的访问越界异常
 
 	REDIS_CONN_ERR = 11, ///redis连接异常
 	MYSQL_CONN_ERR = 21,
 	SERVER_CONN_ERR = 31,
 };
 
-class CException: public std::exception
+class Exception: public std::exception
 {
 
 public:
-	CException( const std::string &pErrInfo ) :
+	Exception( const std::string &pErrInfo ) :
 			_errInfo(pErrInfo)
 	{
 
 	}
 
-	~CException( ) throw ( )
+	~Exception( ) throw ( )
 	{
 
 	}
@@ -65,7 +66,8 @@ public:
 	{
 		string errCode;
 		stringstream ss;
-		ss << _errCode;
+		int tmp=(int)_errCode;
+		ss << tmp;
 		ss >> errCode;
 
 		return errCode;
@@ -75,21 +77,17 @@ public:
 	{
 		string errCode, errInfo;
 		stringstream ss;
-		ss << _errCode;
+		int tmp=(int)_errCode;
+		ss << tmp;
 		ss >> errCode;
 		errInfo = errCode + ":" + _errInfo;
 
 		return errInfo;
 	}
 
-private:
-	void initCodeMap( )
-	{
-	}
-
 protected:
 	std::string _errInfo;
-	EEXCECODE _errCode;
+	Eexcecode _errCode;
 };
 
 #define NEW_EXCEPTION( name,parent,code ) \
@@ -109,27 +107,27 @@ protected:
     };
 
 ///<  redis error
-NEW_EXCEPTION(RedisErr, CException, REDIS_ERR)
+NEW_EXCEPTION(RedisErr, Exception, Eexcecode::REDIS_ERR)
 ///<  数据库连接不成功
-NEW_EXCEPTION(MysqlErr, CException, MYSQL_ERR)
+NEW_EXCEPTION(MysqlErr, Exception, Eexcecode::MYSQL_ERR)
 ///<  服务器连接超时
-NEW_EXCEPTION(ServerErr, CException, SERVER_ERR)
+NEW_EXCEPTION(ServerErr, Exception, Eexcecode::SERVER_ERR)
 ///<  配置文件不存在
-NEW_EXCEPTION(FileErr, CException, FILE_ERR)
+NEW_EXCEPTION(FileErr, Exception, Eexcecode::FILE_ERR)
 ///<  类型转换除错
-NEW_EXCEPTION(TypeConvertErr, CException, TYPE_CONVER_ERR)
+NEW_EXCEPTION(TypeConvertErr, Exception, Eexcecode::TYPE_CONVER_ERR)
 ///< 参数错误
-NEW_EXCEPTION(InvalidArgErr, CException, INVALID_ARG_ERR)
+NEW_EXCEPTION(InvalidArgErr, Exception, Eexcecode::INVALID_ARG_ERR)
 ///< 超过最大值
-NEW_EXCEPTION(ExceedMaxErr, CException, EXCEED_MAX_ERR)
+NEW_EXCEPTION(ExceedMaxErr, Exception, Eexcecode::EXCEED_MAX_ERR)
 ///< 各种数据结构的访问越界异常
-NEW_EXCEPTION(OutOfRangeErr, CException, Out_Of_Range_ERR)
+NEW_EXCEPTION(OutOfRangeErr, Exception, Eexcecode::OUT_Of_RANGE_ERR)
 ///< 数值溢出
-NEW_EXCEPTION(OverflowErr, CException, OVERFLOW_ERR)
+NEW_EXCEPTION(OverflowErr, Exception, Eexcecode::OVERFLOW_ERR)
 
 /**********测试自定义继承异常************/
 ///<  redis连接不成功
-NEW_EXCEPTION(RedisConnErr, RedisErr, REDIS_CONN_ERR)
-NEW_EXCEPTION(MysqlConnErr, MysqlErr, MYSQL_CONN_ERR)
+NEW_EXCEPTION(RedisConnErr, RedisErr, Eexcecode::REDIS_CONN_ERR)
+NEW_EXCEPTION(MysqlConnErr, MysqlErr, Eexcecode::MYSQL_CONN_ERR)
 }
 #endif /* CEXCEPTION_H_ */
