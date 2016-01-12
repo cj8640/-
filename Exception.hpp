@@ -20,7 +20,7 @@ using std::stringstream;
 namespace Taiji
 {
 
-enum   class Eexcecode:int
+enum class Eexcecode : int
 {
 	/*基本异常*/
 	REDIS_ERR = 10, ///redis异常
@@ -66,7 +66,7 @@ public:
 	{
 		string errCode;
 		stringstream ss;
-		int tmp=(int)_errCode;
+		int tmp = (int) _errCode;
 		ss << tmp;
 		ss >> errCode;
 
@@ -77,7 +77,7 @@ public:
 	{
 		string errCode, errInfo;
 		stringstream ss;
-		int tmp=(int)_errCode;
+		int tmp = (int) _errCode;
 		ss << tmp;
 		ss >> errCode;
 		errInfo = errCode + ":" + _errInfo;
