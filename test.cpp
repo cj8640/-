@@ -5,21 +5,22 @@ using namespace std;
 #include <unistd.h>
 
 #include "Exception.hpp"
-#include<typeinfo>
 #include <sstream>
+#include <exception>
+#include <stdexcept>
+
 int main( )
 {
 	using namespace Taiji;
-//	using Taiji::MysqlConnErr;
-//	using Taiji::Exception;
 	try
 	{
-		throw MysqlConnErr("sfsf");
+		throw ExceptNullptr("sfsf");
 	} catch( Exception &e )
 	{
 		cout << e.what() << endl;
-		cout <<e.getErrorCode() << endl;
-		cout<<e.getErrInfo()<<endl;
+		cout << e.getErrorCode() << endl;
+		cout << e.getErrInfo() << endl;
+		cout << e.getErrorCodeString() << endl;
 	}
 
 	return 1;

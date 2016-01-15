@@ -5,7 +5,8 @@
  * @brief 此文件的简单描述。(必填字段)
  *
  * 此文件的详细功能描述。(可选字段)
- *
+ * ExceptCode枚举类:只列出几个基类，如果不够用，可根据需要可派生子类
+ * Exception类:_inheritNum属性代表继承的次数，当继承次数大于2次时，则_errCode为第二次继承时的相反数
  * @author: 		cj
  * @date: 		2016年1月6日
  *
@@ -14,32 +15,20 @@
 #ifndef EXCEPTION_H_
 #define EXCEPTION_H_
 #include <sstream>
-using std::string;
-using std::stringstream;
 
 namespace Taiji
 {
 
-enum class Eexcecode : int
+enum class ExceptCode: int
 {
+	/*没有异常编号*/
+	NO_EXCEPT_CODE = 0,	///< 没有异常编号
 	/*基本异常*/
-	REDIS_ERR = 10, ///redis异常
-	MYSQL_ERR = 20, ///数据库异常
-	SERVER_ERR = 30, ///服务器异常
-	FILE_ERR = 40, ///文件异常
-	DATA_ERR = 50, //数值异常
-	REQUEST_ERR = 60, ///请求错误
-
-	/*自定义派生异常*/
-	TYPE_CONVER_ERR = 51, ///类型转换错误
-	INVALID_ARG_ERR = 52, ///参数错误
-	EXCEED_MAX_ERR = 53, ///超过最大值
-	OVERFLOW_ERR = 54, ///数值溢出
-	OUT_Of_RANGE_ERR = 55, ///各种数据结构的访问越界异常
-
-	REDIS_CONN_ERR = 11, ///redis连接异常
-	MYSQL_CONN_ERR = 21,
-	SERVER_CONN_ERR = 31,
+	REDIS_EXCEPT = 100, 	///< redis异常
+	MYSQL_EXCEPT = 200, 	///< 数据库异常
+	FILE_EXCEPT = 300, 		///< 文件异常
+	RUNTIME_EXCEPT = 400, ///< 运行时异常
+	SERVER_EXCEPT = 500, ///< 服务器异常
 };
 
 class Exception: public std::exception
@@ -52,33 +41,36 @@ public:
 
 	}
 
-	~Exception( ) throw ( )
+	~Exception( ) noexcept
 	{
 
 	}
 
-	virtual const char* what( ) const throw ( )
+	virtual const char* what( ) noexcept
 	{
 		return _errInfo.c_str();
 	}
 
-	const string getErrorCode( ) throw ( )
+	const std::string getErrorCodeString( ) noexcept
 	{
-		string errCode;
-		stringstream ss;
-		int tmp = (int) _errCode;
-		ss << tmp;
+		std::string errCode;
+		std::stringstream ss;
+		ss << _errCode;
 		ss >> errCode;
 
 		return errCode;
 	}
 
-	const string getErrInfo( )
+	int getErrorCode( )
 	{
-		string errCode, errInfo;
-		stringstream ss;
-		int tmp = (int) _errCode;
-		ss << tmp;
+		return _errCode;
+	}
+
+	const std::string getErrInfo( )
+	{
+		std::string errCode, errInfo;
+		std::stringstream ss;
+		ss << _errCode;
 		ss >> errCode;
 		errInfo = errCode + ":" + _errInfo;
 
@@ -87,17 +79,25 @@ public:
 
 protected:
 	std::string _errInfo;
-	Eexcecode _errCode;
+	int _errCode;
+	int _inheritNum;
 };
 
-#define NEW_EXCEPTION( name,parent,code ) \
+#define TAIJI_NEW_EXCEPTION( name,parent,code ) \
     class name : public parent \
     { \
         public: 	\
             name( const std::string& pErrInfo) \
             : parent( pErrInfo) \
             { \
-        	_errCode=code;\
+        	_inheritNum++;\
+        	if(_inheritNum>3){ \
+        		if(_errCode>0) {\
+        			_errCode=-_errCode; \
+			} \
+		}else{ \
+			_errCode=(int)code+parent::_errCode;\
+		} \
             }	\
             \
             ~name( ) throw()\
@@ -106,28 +106,61 @@ protected:
             }\
     };
 
-///<  redis error
-NEW_EXCEPTION(RedisErr, Exception, Eexcecode::REDIS_ERR)
-///<  数据库连接不成功
-NEW_EXCEPTION(MysqlErr, Exception, Eexcecode::MYSQL_ERR)
-///<  服务器连接超时
-NEW_EXCEPTION(ServerErr, Exception, Eexcecode::SERVER_ERR)
-///<  配置文件不存在
-NEW_EXCEPTION(FileErr, Exception, Eexcecode::FILE_ERR)
-///<  类型转换除错
-NEW_EXCEPTION(TypeConvertErr, Exception, Eexcecode::TYPE_CONVER_ERR)
-///< 参数错误
-NEW_EXCEPTION(InvalidArgErr, Exception, Eexcecode::INVALID_ARG_ERR)
-///< 超过最大值
-NEW_EXCEPTION(ExceedMaxErr, Exception, Eexcecode::EXCEED_MAX_ERR)
-///< 各种数据结构的访问越界异常
-NEW_EXCEPTION(OutOfRangeErr, Exception, Eexcecode::OUT_Of_RANGE_ERR)
-///< 数值溢出
-NEW_EXCEPTION(OverflowErr, Exception, Eexcecode::OVERFLOW_ERR)
+/******************基类异常*********************/
+///<  redis异常
+TAIJI_NEW_EXCEPTION(ExceptRedis, Exception, ExceptCode::REDIS_EXCEPT)
+///<  数据库异常
+TAIJI_NEW_EXCEPTION(ExceptMysql, Exception, ExceptCode::MYSQL_EXCEPT)
+///<  文件异常
+TAIJI_NEW_EXCEPTION(ExceptFile, Exception, ExceptCode::FILE_EXCEPT)
+///<  运行时异常
+TAIJI_NEW_EXCEPTION(ExceptRuntime, Exception, ExceptCode::RUNTIME_EXCEPT)
+///<  服务器异常
+TAIJI_NEW_EXCEPTION(ExceptServer, Exception, ExceptCode::SERVER_EXCEPT)
 
-/**********测试自定义继承异常************/
+/********** redis 派生类异常************/
 ///<  redis连接不成功
-NEW_EXCEPTION(RedisConnErr, RedisErr, Eexcecode::REDIS_CONN_ERR)
-NEW_EXCEPTION(MysqlConnErr, MysqlErr, Eexcecode::MYSQL_CONN_ERR)
-}
+TAIJI_NEW_EXCEPTION(ExceptRedisConn, ExceptRedis, 10)
+
+/*********** mysql 的派生类异常 ********************/
+///<  mysql连接不成功
+TAIJI_NEW_EXCEPTION(ExceptMysqlConn, ExceptMysql, 20)
+
+/*********** 文件的派生类异常 ********************/
+///<  文件创建异常
+TAIJI_NEW_EXCEPTION(ExceptCreateFile, ExceptFile, 30)
+///<  文件打开异常
+TAIJI_NEW_EXCEPTION(ExceptOpenFile, ExceptFile, 40)
+///<  文件写异常
+TAIJI_NEW_EXCEPTION(ExceptWriteFile, ExceptFile, 50)
+///<  文件读异常
+TAIJI_NEW_EXCEPTION(ExceptReadFile, ExceptFile, 60)
+
+/******************运行时派生类异常*******************/
+///<  数据异常
+TAIJI_NEW_EXCEPTION(ExceptData, ExceptRuntime, 70)
+///< 内存不足
+TAIJI_NEW_EXCEPTION(ExceptOutOfMemory, ExceptRuntime, 80)
+
+///<  服务器链接异常
+TAIJI_NEW_EXCEPTION(ExceptServerConn, ExceptServer, 90)
+
+/******************数据的派生类异常*******************/
+///<  类型转换除错
+TAIJI_NEW_EXCEPTION(ExceptTypeConvert, ExceptData, 1)
+///< 参数错误
+TAIJI_NEW_EXCEPTION(ExceptInvalidArg, ExceptData, 2)
+///< 超过最大值
+TAIJI_NEW_EXCEPTION(ExceptExceedMax, ExceptData, 3)
+///< 各种数据结构的访问越界异常
+TAIJI_NEW_EXCEPTION(ExceptOutOfRange, ExceptData, 4)
+///< 数值溢出
+TAIJI_NEW_EXCEPTION(ExceptOverflow, ExceptData, 5)
+///< 空指针异常
+TAIJI_NEW_EXCEPTION(ExceptNullptr, ExceptData, 6)
+
+
+
+} //namespace Taiji
+
 #endif /* CEXCEPTION_H_ */
