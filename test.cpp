@@ -14,7 +14,7 @@ int main( )
 	using namespace Taiji;
 	try
 	{
-		throw ExceptNullptr("sfsf");
+		throw ExceptRedisConn("sfsf");
 	} catch( Exception &e )
 	{
 		cout << e.what() << endl;
